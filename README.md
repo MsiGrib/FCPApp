@@ -40,3 +40,23 @@ This tool allows you to select a root directory and specify which subfolders sho
 
 - **Configuration Persistence**: Selected folders are saved in a configuration file, ensuring your preferences are remembered between sessions.
 - **Real-time Monitoring**: The application continuously monitors the root directory for changes (new folders) every 3 seconds.
+
+## Creating a publish version
+
+# 🪟 WINDOWS x64
+dotnet publish -c Release -r win-x64 -o publish/releases/FCPApp-Windows-x64
+
+# 🪟 WINDOWS ARM64
+dotnet publish -c Release -r win-arm64 -o publish/releases/FCPApp-Windows-ARM64
+
+# 🐧 LINUX x64
+dotnet publish -c Release -r linux-x64 -o publish/releases/FCPApp-Linux-x64
+
+# 🐧 LINUX ARM64
+dotnet publish -c Release -r linux-arm64 -o publish/releases/FCPApp-Linux-ARM64
+
+# 🍎 MACOS x64
+dotnet publish -c Release -r osx-x64 -o publish/releases/FCPApp-macOS-Intel
+
+# 🍎 MACOS ARM64
+dotnet publish -c Release -r osx-arm64 -o publish/releases/FCPApp-macOS-AppleSilicon
