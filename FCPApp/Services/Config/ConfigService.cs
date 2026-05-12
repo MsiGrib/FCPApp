@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 
-namespace FCPApp.Services;
+namespace FCPApp.Services.Config;
 
 public static class ConfigService
 {

@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace FCPApp;
 
-class Program
+public class Program
 {
     [STAThread]
     public static void Main(string[] args)
@@ -23,6 +23,14 @@ class Program
 
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
+
+    public static AppBuilder BuildAvaloniaApp()
+        => AppBuilder.Configure<App>()
+            .UsePlatformDetect()
+            .WithInterFont()
+            .LogToTrace();
+
+    #region Admin helpers
 
     private static bool IsRunningAsAdmin()
     {
@@ -43,6 +51,7 @@ class Program
             var adminValue = Enum.Parse(roleEnum, "Administrator");
 
             var isInRole = principalType?.GetMethod("IsInRole", new[] { roleEnum });
+
             return (bool?)isInRole?.Invoke(principal, new[] { adminValue }) == true;
         }
         catch
@@ -62,8 +71,7 @@ class Program
             if (exePath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
             {
                 var exeWithoutDll = exePath.Replace(".dll", ".exe");
-                if (File.Exists(exeWithoutDll))
-                    exePath = exeWithoutDll;
+                if (File.Exists(exeWithoutDll)) exePath = exeWithoutDll;
             }
 
             if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
@@ -103,11 +111,8 @@ class Program
     {
         if (!IsRunningAsRoot())
         {
-            Console.WriteLine("⚠️  On Linux, deleting system folders may require root privileges.");
-            Console.WriteLine("   If you get 'No rights' errors, run the program like this:");
-            Console.WriteLine("   📦 sudo dotnet FCPApp.dll");
-            Console.WriteLine("   or");
-            Console.WriteLine("   📦 sudo ./FCPApp");
+            Console.WriteLine("⚠️ On Linux, deleting system folders may require root privileges.");
+            Console.WriteLine("   If you get 'No rights' errors, run: sudo dotnet FCPApp.dll");
             Console.WriteLine("   Press Enter to continue without permissions...");
             Console.ReadLine();
         }
@@ -125,9 +130,5 @@ class Program
         }
     }
 
-    public static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<App>()
-            .UsePlatformDetect()
-            .WithInterFont()
-            .LogToTrace();
+    #endregion
 }

@@ -2,22 +2,27 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using FCPApp.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 
 namespace FCPApp.Views;
 
 public partial class MainWindow : Window
 {
-    public MainWindow()
+    public MainWindow(MainViewModel viewModel)
     {
         InitializeComponent();
-        DataContext = new MainViewModel();
+
+        DataContext = viewModel;
+
         this.Closed += MainWindow_Closed;
     }
 
+    public MainWindow() : this(App.Services.GetRequiredService<MainViewModel>()) { }
+
     private void MainWindow_Closed(object? sender, EventArgs e)
     {
-        if (DataContext is MainViewModel vm) vm.StopAutoRefresh();
+        if (DataContext is MainViewModel vm) vm.OnWindowClosing();
     }
 
     private async void OnSelectFolderClicked(object? sender, RoutedEventArgs e)
@@ -35,10 +40,6 @@ public partial class MainWindow : Window
                 var path = folders[0].Path.LocalPath;
                 Console.WriteLine($"[DEBUG] Folder selected: {path}");
                 vm.SetRootPath(path);
-            }
-            else
-            {
-                Console.WriteLine("[DEBUG] Folder not selected or invalid DataContext");
             }
         }
         catch (Exception ex)
