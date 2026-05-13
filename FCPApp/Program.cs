@@ -1,4 +1,5 @@
 ﻿using Avalonia;
+using FCPApp.Services.Config;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -8,29 +9,99 @@ namespace FCPApp;
 
 public class Program
 {
+    private static readonly string LogPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "FCPApp", "startup.log"
+    );
+
     [STAThread]
     public static void Main(string[] args)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            if (!IsRunningAsAdmin())
-            {
-                RestartAsAdmin(args);
-                return;
-            }
-        }
-        else WarnAboutPermissions();
+        Directory.CreateDirectory(Path.GetDirectoryName(LogPath)!);
+        Log($"[=== {DateTime.Now:HH:mm:ss} ===] App starting...");
 
-        BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+        try
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                if (!IsRunningAsAdmin())
+                {
+                    Log("[ADMIN] Not admin, requesting elevation...");
+                    RestartAsAdmin(args);
+                    Log("[ADMIN] RestartAsAdmin called, exiting current process");
+                    return;
+                }
+                Log("[ADMIN] Running as admin ✓");
+            }
+            else
+            {
+                WarnAboutPermissions();
+            }
+
+            Log("[CONFIG] Checking startup status...");
+            CheckStartupStatus();
+
+            Log("[AVALONIA] Starting application...");
+
+            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+
+            Log("[EXIT] Application shutdown normally");
+        }
+        catch (Exception ex)
+        {
+            Log($"[FATAL] Unhandled exception: {ex}");
+            Console.WriteLine($"❌ Fatal error: {ex.Message}");
+            Console.WriteLine($"📄 Log: {LogPath}");
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                MessageBoxShow("FCPApp Error", $"Failed to start:\n{ex.Message}\n\nLog: {LogPath}");
+            }
+
+            Environment.Exit(1);
+        }
+    }
+
+    private static void Log(string message)
+    {
+        var line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
+        Console.WriteLine(line);
+        try { File.AppendAllText(LogPath, line + "\n"); } catch { }
     }
 
     public static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<App>()
+    {
+        Log("[AVALONIA] Building AppBuilder...");
+        return AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()
-            .LogToTrace();
+            .LogToTrace()
+            .With(new X11PlatformOptions { EnableIme = true });
+    }
 
-    #region Admin helpers
+    public static void CheckStartupStatus()
+    {
+        try
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                bool isEnabled = AppSettingsService.IsStartWithWindowsEnabled();
+                Log($"[STARTUP] Auto-start: {(isEnabled ? "✅ ENABLED" : "❌ DISABLED")}");
+
+                var settings = AppSettingsService.Load();
+                if (settings.StartWithWindows != isEnabled)
+                {
+                    Log("[STARTUP] ⚠️ Registry/config mismatch!");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log($"[STARTUP] Error: {ex.Message}");
+        }
+    }
+
+    #region Admin helpers (без изменений)
 
     private static bool IsRunningAsAdmin()
     {
@@ -51,11 +122,14 @@ public class Program
             var adminValue = Enum.Parse(roleEnum, "Administrator");
 
             var isInRole = principalType?.GetMethod("IsInRole", new[] { roleEnum });
+            var result = (bool?)isInRole?.Invoke(principal, new[] { adminValue }) == true;
 
-            return (bool?)isInRole?.Invoke(principal, new[] { adminValue }) == true;
+            Log($"[ADMIN] IsInRole(Administrator) = {result}");
+            return result;
         }
-        catch
+        catch (Exception ex)
         {
+            Log($"[ADMIN] Error: {ex.Message}");
             return false;
         }
     }
@@ -68,10 +142,16 @@ public class Program
                 ?? Environment.ProcessPath
                 ?? AppContext.BaseDirectory;
 
+            Log($"[RESTART] Exe path: {exePath}");
+
             if (exePath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
             {
                 var exeWithoutDll = exePath.Replace(".dll", ".exe");
-                if (File.Exists(exeWithoutDll)) exePath = exeWithoutDll;
+                if (File.Exists(exeWithoutDll))
+                {
+                    exePath = exeWithoutDll;
+                    Log($"[RESTART] Using .exe: {exePath}");
+                }
             }
 
             if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
@@ -85,23 +165,31 @@ public class Program
 
                 foreach (var arg in args) startInfo.ArgumentList.Add(arg);
 
-                Process.Start(startInfo);
-                Console.WriteLine("✅ Administrator rights requested (Windows)...");
+                Log("[RESTART] Starting elevated process...");
+                var proc = Process.Start(startInfo);
 
+                if (proc != null)
+                {
+                    Log($"[RESTART] ✅ Started PID={proc.Id}");
+                }
+                else
+                {
+                    Log("[RESTART] ❌ Process.Start returned null");
+                }
                 return;
             }
         }
         catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
         {
-            Console.WriteLine("⚠️ Launch cancelled by user");
+            Log("[RESTART] ⚠️ User cancelled UAC prompt");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Error requesting rights: {ex.Message}");
+            Log($"[RESTART] ❌ Error: {ex}");
         }
 
         Console.WriteLine("⚠️ Failed to obtain administrator rights.");
-        Console.WriteLine("Try: Right-click the shortcut → Run as administrator");
+        Console.WriteLine($"📄 Log: {LogPath}");
         Console.WriteLine("Press any key to exit...");
         Console.ReadKey();
         Environment.Exit(1);
@@ -111,10 +199,14 @@ public class Program
     {
         if (!IsRunningAsRoot())
         {
-            Console.WriteLine("⚠️ On Linux, deleting system folders may require root privileges.");
-            Console.WriteLine("   If you get 'No rights' errors, run: sudo dotnet FCPApp.dll");
-            Console.WriteLine("   Press Enter to continue without permissions...");
+            Log("[PERMS] Not running as root on Unix");
+            Console.WriteLine("⚠️ On Linux, run with: sudo dotnet FCPApp.dll");
+            Console.WriteLine("Press Enter to continue...");
             Console.ReadLine();
+        }
+        else
+        {
+            Log("[PERMS] Running as root ✓");
         }
     }
 
@@ -128,6 +220,27 @@ public class Program
         {
             return false;
         }
+    }
+
+    #endregion
+
+    #region UI Helpers
+
+    private static void MessageBoxShow(string title, string message)
+    {
+        try
+        {
+            var asm = System.Reflection.Assembly.Load("System.Windows.Forms");
+            var mbType = asm?.GetType("System.Windows.Forms.MessageBox");
+            if (mbType != null)
+            {
+                var showMethod = mbType.GetMethod("Show", new[] { typeof(string), typeof(string) });
+                showMethod?.Invoke(null, new object[] { message, title });
+                return;
+            }
+        }
+        catch { }
+        Console.WriteLine($"{title}: {message}");
     }
 
     #endregion

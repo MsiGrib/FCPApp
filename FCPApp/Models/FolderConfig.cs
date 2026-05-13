@@ -1,11 +1,16 @@
 ﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
-namespace FCPApp.Models
+namespace FCPApp.Models;
+
+public record FolderConfig
 {
-    public record FolderConfig
-    {
-        public string? RootPath { get; set; }
-        public List<string> SelectedFolderPaths { get; set; } = new();
-        public bool SkipAllErrors { get; set; } = false;
-    }
+    [JsonPropertyName("RootPath")]
+    public string? RootPath { get; set; }
+
+    [JsonPropertyName("SelectedFolderPaths")]
+    public List<string> SelectedFolderPaths { get; set; } = new();
+
+    [JsonPropertyName("SkipAllErrors")]
+    public bool SkipAllErrors { get; set; } = false;
 }

@@ -3,7 +3,7 @@ using Avalonia.Media;
 using System;
 using System.Globalization;
 
-namespace FCPApp.ViewModels;
+namespace FCPApp.Converters;
 
 public class SimpleBoolConverter : IValueConverter
 {

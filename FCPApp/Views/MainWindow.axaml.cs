@@ -1,4 +1,4 @@
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using FCPApp.ViewModels;
@@ -9,11 +9,13 @@ namespace FCPApp.Views;
 
 public partial class MainWindow : Window
 {
+    private MainViewModel? _mainVm;
+
     public MainWindow(MainViewModel viewModel)
     {
         InitializeComponent();
-
         DataContext = viewModel;
+        _mainVm = viewModel;
 
         this.Closed += MainWindow_Closed;
     }
@@ -22,7 +24,8 @@ public partial class MainWindow : Window
 
     private void MainWindow_Closed(object? sender, EventArgs e)
     {
-        if (DataContext is MainViewModel vm) vm.OnWindowClosing();
+        _mainVm?.OnWindowClosing();
+        Console.WriteLine("[UI] Window closed");
     }
 
     private async void OnSelectFolderClicked(object? sender, RoutedEventArgs e)

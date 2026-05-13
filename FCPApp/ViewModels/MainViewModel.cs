@@ -1,7 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FCPApp.Models;
-using FCPApp.Services;
 using FCPApp.Services.Config;
 using FCPApp.Services.FileSystem;
 using FCPApp.Services.Refresh;
@@ -28,11 +27,15 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _hasErrors;
     [ObservableProperty] private bool _skipAllErrors;
     [ObservableProperty] private ObservableCollection<FolderTreeNode> _selectedFoldersTree = new();
+    [ObservableProperty] private string _currentPage = "Home";
 
     private readonly IFileSystemService _fileSystem;
     private readonly IFolderTreeService _treeService;
     private readonly ISelectionManager _selectionManager;
     private readonly IAutoRefreshManager _autoRefresh;
+
+    private readonly SettingsViewModel _settingsVm;
+    public SettingsViewModel SettingsVm => _settingsVm;
 
     public MainViewModel(
         IFileSystemService? fileSystem = null,
@@ -45,12 +48,32 @@ public partial class MainViewModel : ViewModelBase
         _selectionManager = selectionManager ?? new SelectionManager();
         _autoRefresh = autoRefresh ?? new AutoRefreshManager();
 
+        _settingsVm = new SettingsViewModel();
+
         LoadConfigAndRestore();
 
         if (!string.IsNullOrEmpty(RootPath)) StartAutoRefresh();
     }
 
     #region Commands
+
+    #region Navigation Commands
+
+    [RelayCommand]
+    private void NavigateToHome()
+    {
+        CurrentPage = "Home";
+        StatusText = "🏠 Home view";
+    }
+
+    [RelayCommand]
+    private void NavigateToSettings()
+    {
+        CurrentPage = "Settings";
+        StatusText = "⚙️ Settings view";
+    }
+
+    #endregion
 
     [RelayCommand]
     private void ToggleSkipErrors()
@@ -202,7 +225,7 @@ public partial class MainViewModel : ViewModelBase
 
     #endregion
 
-    #region Public API
+    #region Public
 
     public void StartAutoRefresh()
         => _autoRefresh.Start(RefreshTreeAsync);

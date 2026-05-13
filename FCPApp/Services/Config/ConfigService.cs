@@ -59,7 +59,10 @@ public static class ConfigService
         try
         {
             Directory.CreateDirectory(ConfigDir);
-            var options = new JsonSerializerOptions { WriteIndented = true };
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true
+            };
 
             File.WriteAllText(ConfigPath, JsonSerializer.Serialize(config, options));
             Console.WriteLine($"[CONFIG] Saved to: {ConfigPath}");
