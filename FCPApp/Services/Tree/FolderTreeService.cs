@@ -25,6 +25,8 @@ public class FolderTreeService : IFolderTreeService
         collection.Clear();
         loadedCount = 0;
         LoadDirectoryRecursive(rootPath, collection, 0, maxDepth, preSelectedPaths, ref loadedCount);
+
+        ExpandPathToCheckedNodes(collection);
     }
 
     private void LoadDirectoryRecursive(string path, ObservableCollection<FolderTreeNode> collection,
@@ -47,7 +49,7 @@ public class FolderTreeService : IFolderTreeService
             var node = new FolderTreeNode(name, dir, currentDepth + 1)
             {
                 IsChecked = isChecked,
-                IsExpanded = currentDepth < 2
+                IsExpanded = false,
             };
             collection.Add(node);
             loadedCount++;
@@ -199,6 +201,26 @@ public class FolderTreeService : IFolderTreeService
         {
             node.IsExpanded = expandedPaths.Contains(node.FullPath);
             RestoreExpandedPaths(node.Children, expandedPaths);
+        }
+    }
+
+    private void ExpandPathToCheckedNodes(ObservableCollection<FolderTreeNode> nodes)
+    {
+        foreach (var node in nodes)
+        {
+            if (node.IsChecked)
+            {
+                node.IsExpanded = true;
+
+                var current = node;
+                while (current?.Parent != null)
+                {
+                    current.Parent.IsExpanded = true;
+                    current = current.Parent;
+                }
+            }
+
+            ExpandPathToCheckedNodes(node.Children);
         }
     }
 }
