@@ -1,6 +1,4 @@
 ﻿using Avalonia.Controls;
-using Avalonia.Interactivity;
-using Avalonia.Platform.Storage;
 using FCPApp.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -26,28 +24,5 @@ public partial class MainWindow : Window
     {
         _mainVm?.OnWindowClosing();
         Console.WriteLine("[UI] Window closed");
-    }
-
-    private async void OnSelectFolderClicked(object? sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
-            {
-                Title = "Select the root folder",
-                AllowMultiple = false
-            });
-
-            if (folders.Count > 0 && DataContext is MainViewModel vm)
-            {
-                var path = folders[0].Path.LocalPath;
-                Console.WriteLine($"[DEBUG] Folder selected: {path}");
-                vm.SetRootPath(path);
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[ERROR] OnSelectFolderClicked: {ex}");
-        }
     }
 }

@@ -45,6 +45,7 @@ namespace FCPApp
             services.AddSingleton<IAutoRefreshManager, AutoRefreshManager>();
 
             services.AddTransient<MainViewModel>();
+            services.AddTransient<HomeViewModel>();
             services.AddTransient<SettingsViewModel>();
         }
 

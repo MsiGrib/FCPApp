@@ -5,6 +5,7 @@
         xmlns:converters="using:FCPApp.Converters"
         xmlns:views="using:FCPApp.Views"
         x:Class="FCPApp.Views.MainWindow"
+        x:Name="RootWindow"
         x:DataType="vm:MainViewModel"
         Title="FCPApp" Width="1200" Height="700" MinWidth="900" MinHeight="600"
         WindowStartupLocation="CenterScreen"
@@ -113,21 +114,21 @@
             </Grid>
         </Border>
 
-    <Grid Grid.Row="1">
+        <Grid Grid.Row="1">
 
-        <views:HomeView
-        DataContext="{Binding .}"
-        IsVisible="{Binding $parent[Window].DataContext.CurrentPage,
-        Converter={StaticResource StringEqualsConverter},
-        ConverterParameter=Home}"/>
+            <views:HomeView
+            DataContext="{Binding HomeVm}"
+            IsVisible="{Binding #RootWindow.DataContext.CurrentPage,
+            Converter={StaticResource StringEqualsConverter},
+            ConverterParameter=Home}"/>
 
-        <views:SettingsView
-        DataContext="{Binding $parent[Window].DataContext.SettingsVm}"
-        IsVisible="{Binding $parent[Window].DataContext.CurrentPage,
-        Converter={StaticResource StringEqualsConverter},
-        ConverterParameter=Settings}"/>
+            <views:SettingsView
+            DataContext="{Binding SettingsVm}"
+            IsVisible="{Binding #RootWindow.DataContext.CurrentPage,
+            Converter={StaticResource StringEqualsConverter},
+            ConverterParameter=Settings}"/>
 
-    </Grid>
+        </Grid>
 
     </Grid>
 </Window>

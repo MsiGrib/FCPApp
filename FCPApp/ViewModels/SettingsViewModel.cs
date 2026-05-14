@@ -29,6 +29,32 @@ public partial class SettingsViewModel : ViewModelBase
         LoadSettings();
     }
 
+    #region Public Methods
+
+    public static string GetSettingsPathForDebug()
+        => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FCPApp", "appsettings.json");
+
+    private void SaveSettings()
+    {
+        _currentSettings = _currentSettings with
+        {
+            StartWithWindows = StartWithWindows
+        };
+
+        AppSettingsService.Save(_currentSettings);
+        AppSettingsService.ApplyStartWithWindows(StartWithWindows);
+
+        SettingsStatus = $"Saved ✓ {DateTime.Now:HH:mm:ss}";
+
+        _ = Task.Delay(2000).ContinueWith(_ =>
+            SettingsStatus = $"Last saved: {DateTime.Now:HH:mm:ss}",
+            TaskScheduler.FromCurrentSynchronizationContext());
+    }
+
+    #endregion
+
+    #region Private Helpers
+
     private void LoadSettings()
     {
         Console.WriteLine("[SETTINGS] 📥 LoadSettings() started");
@@ -59,26 +85,6 @@ public partial class SettingsViewModel : ViewModelBase
         });
     }
 
-    public static string GetSettingsPathForDebug()
-        => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FCPApp", "appsettings.json");
-
-    private void SaveSettings()
-    {
-        _currentSettings = _currentSettings with
-        {
-            StartWithWindows = StartWithWindows
-        };
-
-        AppSettingsService.Save(_currentSettings);
-        AppSettingsService.ApplyStartWithWindows(StartWithWindows);
-
-        SettingsStatus = $"Saved ✓ {DateTime.Now:HH:mm:ss}";
-
-        _ = Task.Delay(2000).ContinueWith(_ =>
-            SettingsStatus = $"Last saved: {DateTime.Now:HH:mm:ss}",
-            TaskScheduler.FromCurrentSynchronizationContext());
-    }
-
     private void OnStartWithWindowsChanged()
         => SaveSettings();
 
@@ -88,4 +94,6 @@ public partial class SettingsViewModel : ViewModelBase
         SaveSettings();
         SettingsStatus = "Reset to defaults ✓";
     }
+
+    #endregion
 }
