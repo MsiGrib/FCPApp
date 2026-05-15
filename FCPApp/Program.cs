@@ -101,7 +101,7 @@ public class Program
         }
     }
 
-    #region Admin helpers (без изменений)
+    #region Admin helpers
 
     private static bool IsRunningAsAdmin()
     {

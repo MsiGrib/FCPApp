@@ -27,7 +27,7 @@
 
 	<ItemGroup Condition="'$(Configuration)' != 'Release'">
 		<PackageReference Include="Avalonia.Diagnostics" Version="11.3.0" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.16" />
 	</ItemGroup>
 
 	<ItemGroup>
