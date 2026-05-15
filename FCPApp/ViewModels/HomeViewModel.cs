@@ -30,6 +30,9 @@ public partial class HomeViewModel : ViewModelBase
     [ObservableProperty] private bool _hasErrors;
     [ObservableProperty] private bool _skipAllErrors;
     [ObservableProperty] private ObservableCollection<FolderTreeNode> _selectedFoldersTree = new();
+    [ObservableProperty] private Profile? _selectedProfile;
+    [ObservableProperty] private ObservableCollection<Profile> _availableProfiles = new();
+    [ObservableProperty] private string _newProfileName = string.Empty;
 
     private readonly IFileSystemService _fileSystem;
     private readonly IFolderTreeService _treeService;
@@ -48,15 +51,150 @@ public partial class HomeViewModel : ViewModelBase
         _autoRefresh = autoRefresh ?? new AutoRefreshManager();
 
         LoadConfigAndRestore();
+        RefreshProfilesList();
         if (!string.IsNullOrEmpty(RootPath)) StartAutoRefresh();
     }
 
     #region Commands
 
     [RelayCommand]
+    private void CreateProfile()
+    {
+        if (string.IsNullOrWhiteSpace(NewProfileName)) return;
+
+        var config = ConfigService.Load();
+        if (config == null)
+        {
+            config = new AppConfig();
+            config.EnsureDefaultProfile();
+        }
+
+        if (config.Profiles.Any(p => p.Name.Equals(NewProfileName, StringComparison.OrdinalIgnoreCase)))
+        {
+            StatusText = "⚠️ Profile name already exists";
+            return;
+        }
+
+        var newProfile = ConfigService.CreateProfile(NewProfileName);
+
+        if (config.CurrentProfile is Profile current)
+        {
+            newProfile = newProfile with
+            {
+                RootPath = current.RootPath,
+                SkipAllErrors = current.SkipAllErrors,
+                SelectedFolderPaths = new List<string>(current.SelectedFolderPaths)
+            };
+        }
+
+        if (ConfigService.AddProfile(config, newProfile))
+        {
+            NewProfileName = string.Empty;
+            RefreshProfilesList();
+            StatusText = $"✅ Profile '{newProfile.Name}' created";
+        }
+        else
+        {
+            StatusText = "⚠️ Failed to create profile";
+        }
+    }
+
+    [RelayCommand]
+    private void DeleteProfile()
+    {
+        if (SelectedProfile == null) return;
+
+        var config = ConfigService.Load();
+        if (config == null) return;
+
+        var profileName = SelectedProfile.Name;
+
+        if (ConfigService.DeleteProfile(config, SelectedProfile.Id))
+        {
+            RefreshProfilesList();
+            LoadCurrentProfileData();
+            StatusText = $"✅ Profile '{profileName}' deleted";
+        }
+    }
+
+    [RelayCommand]
+    private void RenameProfile()
+    {
+        if (SelectedProfile == null || string.IsNullOrWhiteSpace(NewProfileName)) return;
+
+        try
+        {
+            var config = ConfigService.Load();
+            if (config == null) return;
+
+            if (ConfigService.RenameProfile(config, SelectedProfile.Id, NewProfileName))
+            {
+                RefreshProfilesList();
+                StatusText = $"✅ Profile renamed to '{NewProfileName}'";
+            }
+            else StatusText = "⚠️ Profile name already exists";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] RenameProfile: {ex.Message}");
+            StatusText = $"❌ Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private void SwitchToProfile(string profileId)
+    {
+        var config = ConfigService.Load();
+        if (config == null) return;
+
+        if (ConfigService.SwitchProfile(config, profileId))
+        {
+            LoadCurrentProfileData();
+            StatusText = $"🔄 Switched to profile '{config.CurrentProfile?.Name}'";
+        }
+    }
+
+    [RelayCommand]
+    private void SaveProfile()
+    {
+        if (string.IsNullOrEmpty(RootPath)) return;
+
+        var config = ConfigService.Load();
+        if (config?.CurrentProfile == null) return;
+
+        var selectedPaths = _selectionManager.GetSelectedPaths(FolderTree);
+
+        ConfigService.UpdateCurrentProfile(config, profile =>
+        {
+            profile.RootPath = RootPath;
+            profile.SelectedFolderPaths = selectedPaths;
+            profile.SkipAllErrors = SkipAllErrors;
+        });
+
+        RefreshProfilesList();
+        StatusText = $"✅ Profile '{config.CurrentProfile.Name}' saved ({selectedPaths.Count} folders)";
+    }
+
+    [RelayCommand]
     private async Task SelectFolderAsync(object? parameter)
     {
-        var topLevel = TopLevel.GetTopLevel(parameter as Visual);
+        TopLevel? topLevel = null;
+
+        if (parameter is Visual visual)
+            topLevel = TopLevel.GetTopLevel(visual);
+
+        if (topLevel == null && parameter is Control control)
+        {
+            var parent = control.Parent;
+            while (parent != null && topLevel == null)
+            {
+                if (parent is Window window) topLevel = window;
+                else if (parent is TopLevel tl) topLevel = tl;
+
+                parent = parent.Parent;
+            }
+        }
+
         if (topLevel?.StorageProvider is not { } storageProvider)
         {
             Console.WriteLine("[ERROR] SelectFolderAsync: Could not get StorageProvider");
@@ -98,6 +236,7 @@ public partial class HomeViewModel : ViewModelBase
     private void LoadChildren(FolderTreeNode node)
     {
         if (!node.HasUnloadedChildren || node.Children.Count > 0) return;
+
         _treeService.LoadTree(node.FullPath, node.Children, null, 20, out _);
         node.HasUnloadedChildren = false;
     }
@@ -112,16 +251,19 @@ public partial class HomeViewModel : ViewModelBase
     [RelayCommand]
     private void SaveConfig()
     {
-        if (string.IsNullOrEmpty(RootPath)) return;
+        var config = ConfigService.Load();
+        if (config?.CurrentProfile == null) return;
+
         var selectedPaths = _selectionManager.GetSelectedPaths(FolderTree);
 
-        ConfigService.Save(new FolderConfig
+        ConfigService.UpdateCurrentProfile(config, profile =>
         {
-            RootPath = RootPath,
-            SelectedFolderPaths = selectedPaths,
-            SkipAllErrors = SkipAllErrors
+            profile.RootPath = RootPath;
+            profile.SelectedFolderPaths = selectedPaths;
+            profile.SkipAllErrors = SkipAllErrors;
         });
-        StatusText = $"✅ Saved ({selectedPaths.Count} folders)";
+
+        StatusText = $"✅ Saved to profile '{config.CurrentProfile.Name}' ({selectedPaths.Count} folders)";
     }
 
     [RelayCommand]
@@ -181,7 +323,6 @@ public partial class HomeViewModel : ViewModelBase
                         skipped++;
                         continue;
                     }
-
                     errors.Add($"{node.Name}: Folder is locked");
                     continue;
                 }
@@ -229,6 +370,7 @@ public partial class HomeViewModel : ViewModelBase
             HasErrors = false;
             ErrorText = string.Empty;
         }
+
         StatusText = $"✅ Deleted: {deleted} folders{(alreadyDeleted > 0 ? $"\n🗑️ Already gone: {alreadyDeleted}" : "")}{(skipped > 0 ? $"\n⏭ Skipped: {skipped}" : "")}";
     }
 
@@ -261,17 +403,66 @@ public partial class HomeViewModel : ViewModelBase
 
     #region Private Helpers
 
+    partial void OnSelectedProfileChanged(Profile? value)
+    {
+        if (value != null) SwitchToProfile(value.Id);
+    }
+
     private void LoadConfigAndRestore()
     {
         var config = ConfigService.Load();
-        if (config != null && !string.IsNullOrEmpty(config.RootPath) && _fileSystem.DirectoryExists(config.RootPath))
+        if (config?.CurrentProfile is Profile profile &&
+            !string.IsNullOrEmpty(profile.RootPath) &&
+            _fileSystem.DirectoryExists(profile.RootPath))
         {
-            RootPath = config.RootPath;
-            SkipAllErrors = config.SkipAllErrors;
-            _treeService.LoadTree(RootPath, FolderTree, config.SelectedFolderPaths, 20, out int count);
+            RootPath = profile.RootPath;
+            SkipAllErrors = profile.SkipAllErrors;
+            _treeService.LoadTree(RootPath, FolderTree, profile.SelectedFolderPaths, 20, out int count);
             LoadedCount = count;
             UpdateSelectedFoldersTree();
         }
+        RefreshProfilesList();
+    }
+
+    private void LoadCurrentProfileData()
+    {
+        var config = ConfigService.Load();
+        var profile = config?.CurrentProfile;
+
+        if (profile != null && !string.IsNullOrEmpty(profile.RootPath) && _fileSystem.DirectoryExists(profile.RootPath))
+        {
+            StopAutoRefresh();
+            RootPath = profile.RootPath;
+            SkipAllErrors = profile.SkipAllErrors;
+            _selectionManager.UncheckAllRecursive(FolderTree);
+            _treeService.LoadTree(RootPath, FolderTree, profile.SelectedFolderPaths, 20, out int count);
+            LoadedCount = count;
+            UpdateSelectedFoldersTree();
+            StartAutoRefresh();
+        }
+        else
+        {
+            RootPath = string.Empty;
+            FolderTree.Clear();
+            SelectedFoldersTree.Clear();
+            LoadedCount = 0;
+        }
+    }
+
+    private void RefreshProfilesList()
+    {
+        var config = ConfigService.Load();
+        if (config == null)
+        {
+            config = new AppConfig();
+            ConfigService.Save(config);
+        }
+
+        AvailableProfiles = new ObservableCollection<Profile>(config.Profiles);
+        SelectedProfile = config.Profiles.FirstOrDefault(p => p.Id == config.CurrentProfileId);
+
+        if (SelectedProfile != null)
+            NewProfileName = SelectedProfile.Name;
     }
 
     private async Task RefreshTreeAsync()
@@ -280,7 +471,8 @@ public partial class HomeViewModel : ViewModelBase
 
         await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
         {
-            var savedSelected = ConfigService.Load()?.SelectedFolderPaths?
+            var config = ConfigService.Load();
+            var savedSelected = config?.CurrentProfile?.SelectedFolderPaths?
                 .Select(_fileSystem.NormalizePath).ToHashSet(StringComparer.OrdinalIgnoreCase)
                 ?? new HashSet<string>();
 

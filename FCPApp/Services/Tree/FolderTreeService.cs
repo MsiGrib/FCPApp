@@ -35,7 +35,9 @@ public class FolderTreeService : IFolderTreeService
         if (currentDepth >= maxDepth) return;
 
         var subDirs = _fileSystem.GetDirectories(path);
-        var savedSelectedPaths = ConfigService.Load()?.SelectedFolderPaths?
+
+        var config = ConfigService.Load();
+        var savedSelectedPaths = config?.CurrentProfile?.SelectedFolderPaths?
             .Select(_fileSystem.NormalizePath)
             .ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>();
 

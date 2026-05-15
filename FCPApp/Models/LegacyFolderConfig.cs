@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace FCPApp.Models;
 
-public record FolderConfig
+public record LegacyFolderConfig
 {
     [JsonPropertyName("RootPath")]
     public string? RootPath { get; set; }

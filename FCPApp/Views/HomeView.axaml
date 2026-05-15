@@ -7,21 +7,59 @@
              x:Name="HomeV"
              x:DataType="vm:HomeViewModel">
 
+    <Grid Margin="15" ColumnDefinitions="*,300" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto">
 
-    <Grid Margin="15" ColumnDefinitions="*,300" RowDefinitions="Auto,Auto,Auto,*,Auto,Auto">
+        <Border Grid.Row="0" Grid.Column="0" Margin="0,0,0,10"
+                BorderBrush="#444" BorderThickness="0,0,0,1" Padding="0,0,0,10">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="👤 Profile:" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="White"/>
 
-    <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Spacing="10">
-        <TextBlock Text="📁 Root:" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="White"/>
-        <TextBox Text="{Binding RootPath}" IsReadOnly="True" Width="400"
-                 Watermark="The path is not chosen..." Margin="5,0"
-                 Background="#2d2d2d" Foreground="White" BorderBrush="#444"/>
-        <Button Content="Choose..."
-                Command="{Binding SelectFolderCommand}"
-                CommandParameter="{Binding #HomeV}"
-            Classes="action-btn" Background="#3498db" Padding="12,6"/>
-        </StackPanel>
+                <ComboBox ItemsSource="{Binding AvailableProfiles}"
+                          SelectedItem="{Binding SelectedProfile, Mode=TwoWay}"
+                          Width="150"
+                          Background="#2d2d2d" Foreground="White" BorderBrush="#444">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate DataType="models:Profile">
+                            <TextBlock Text="{Binding Name}" Foreground="White"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
 
-        <Grid Grid.Row="1" Grid.Column="0" Margin="0,10,0,0"
+                <TextBox Text="{Binding NewProfileName, UpdateSourceTrigger=PropertyChanged}"
+                         Watermark="New profile name..." Width="120"
+                         Background="#2d2d2d" Foreground="White" BorderBrush="#444"/>
+                <Button Content="➕" Command="{Binding CreateProfileCommand}"
+                        Classes="action-btn" Background="#27ae60" Padding="8,5"
+                        ToolTip.Tip="Create new profile"/>
+                <Button Content="✏️" Command="{Binding RenameProfileCommand}"
+                        Classes="action-btn" Background="#9b59b6" Padding="8,5"
+                        IsEnabled="{Binding SelectedProfile}"
+                        ToolTip.Tip="Rename selected profile"/>
+                <Button Content="🗑️" Command="{Binding DeleteProfileCommand}"
+                        Classes="action-btn" Background="#c0392b" Padding="8,5"
+                        IsEnabled="{Binding SelectedProfile}"
+                        ToolTip.Tip="Delete selected profile"/>
+                <Button Content="💾" Command="{Binding SaveProfileCommand}"
+                        Classes="action-btn" Background="#27ae60" Padding="8,5"
+                        ToolTip.Tip="Save current state to profile"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Grid.Column="0" Margin="0,0,0,10"
+                BorderBrush="#444" BorderThickness="0,0,0,1" Padding="10">
+            <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Left">
+                <TextBlock Text="📁 Root:" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="White"/>
+                <TextBox Text="{Binding RootPath}" IsReadOnly="True" Width="400"
+                         Watermark="The path is not chosen..."
+                         Background="#2d2d2d" Foreground="White" BorderBrush="#444"/>
+                <Button Content="Choose..."
+                        Command="{Binding SelectFolderCommand}"
+                        CommandParameter="{Binding #HomeV}"
+                        Classes="action-btn" Background="#3498db" Padding="12,6"/>
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="2" Grid.Column="0" Margin="0,10,0,0"
               ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="5">
 
             <TextBlock Grid.Column="0" Text="🔍" FontSize="16" VerticalAlignment="Center" Margin="5,0" Foreground="White"/>
@@ -30,37 +68,29 @@
                      Background="#2d2d2d" Foreground="White" BorderBrush="#444"/>
 
             <Button Grid.Column="2" Content="🔎" Command="{Binding ApplyFilterCommand}"
-                    Classes="action-btn" Background="#3498db"
-                    ToolTip.Tip="Apply filter"/>
+                    Classes="action-btn" Background="#3498db" ToolTip.Tip="Apply filter"/>
             <Button Grid.Column="3" Content="➕" Command="{Binding ExpandAllCommand}"
-                    Classes="action-btn" Background="#27ae60"
-                    ToolTip.Tip="Expand all"/>
+                    Classes="action-btn" Background="#27ae60" ToolTip.Tip="Expand all"/>
             <Button Grid.Column="4" Content="➖" Command="{Binding CollapseAllCommand}"
-                    Classes="action-btn" Background="#f39c12"
-                    ToolTip.Tip="Collapse all"/>
+                    Classes="action-btn" Background="#f39c12" ToolTip.Tip="Collapse all"/>
             <Button Grid.Column="5" Content="🧹" Command="{Binding ClearSelectionCommand}"
-                    Classes="action-btn" Background="#9b59b6"
-                    ToolTip.Tip="Uncheck all boxes"/>
+                    Classes="action-btn" Background="#9b59b6" ToolTip.Tip="Uncheck all boxes"/>
             <Button Grid.Column="6" Content="💾" Command="{Binding SaveConfigCommand}"
-                    Classes="action-btn" Background="#27ae60"
-                    ToolTip.Tip="Save configuration"/>
+                    Classes="action-btn" Background="#27ae60" ToolTip.Tip="Save configuration"/>
             <Button Grid.Column="7" Content="⏭" Command="{Binding ToggleSkipErrorsCommand}"
-                    Classes="action-btn" Background="#95a5a6"
-                    ToolTip.Tip="Skip errors"/>
+                    Classes="action-btn" Background="#95a5a6" ToolTip.Tip="Skip errors"/>
             <Button Grid.Column="8" Content="🗑 Delete" Command="{Binding DeleteSelectedCommand}"
                     Classes="action-btn" Background="#c0392b"
-                    IsEnabled="{Binding !IsProcessing}"
-                    ToolTip.Tip="Delete selected folders"/>
+                    IsEnabled="{Binding !IsProcessing}" ToolTip.Tip="Delete selected folders"/>
         </Grid>
 
-        <TextBlock Grid.Row="2" Grid.Column="0" Margin="0,8,0,0" FontSize="12" Foreground="Gray"
+        <TextBlock Grid.Row="3" Grid.Column="0" Margin="0,8,0,0" FontSize="12" Foreground="Gray"
                    Text="💡 Tip: Select folders. The parent selects all descendants."/>
 
-        <Border Grid.Row="3" Grid.Column="0" Margin="0,10,0,0"
+        <Border Grid.Row="4" Grid.Column="0" Margin="0,10,0,0"
                 BorderBrush="#444" BorderThickness="1" CornerRadius="4" Background="#2d2d2d">
             <ScrollViewer HorizontalScrollBarVisibility="Auto"
-                          VerticalScrollBarVisibility="Auto"
-                          IsTabStop="False">
+                          VerticalScrollBarVisibility="Auto" IsTabStop="False">
                 <TreeView ItemsSource="{Binding FolderTree}" Margin="5" MinHeight="200">
                     <TreeView.ItemTemplate>
                         <TreeDataTemplate ItemsSource="{Binding Children}">
@@ -76,11 +106,11 @@
             </ScrollViewer>
         </Border>
 
-        <ProgressBar Grid.Row="4" Grid.Column="0" IsVisible="{Binding IsProcessing}"
+        <ProgressBar Grid.Row="5" Grid.Column="0" IsVisible="{Binding IsProcessing}"
                      IsIndeterminate="True" Height="4" Margin="0,10,0,0"
                      Background="Transparent" Foreground="#3498db"/>
 
-        <Grid Grid.Row="5" Grid.Column="0" Margin="0,12,0,0">
+        <Grid Grid.Row="6" Grid.Column="0" Margin="0,12,0,0">
             <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" FontSize="13"
                        Foreground="#2ecc71" IsVisible="{Binding !HasErrors}"/>
             <TextBox Text="{Binding ErrorText}" TextWrapping="Wrap" FontSize="12"
@@ -89,7 +119,7 @@
                      Watermark="Errors will be shown here..."/>
         </Grid>
 
-        <Border Grid.Row="0" Grid.RowSpan="6" Grid.Column="1" Margin="15,0,0,0"
+        <Border Grid.Row="0" Grid.RowSpan="7" Grid.Column="1" Margin="15,0,0,0"
                 BorderBrush="#444" BorderThickness="1" CornerRadius="4" Background="#252526">
             <Grid Margin="10" RowDefinitions="Auto,*">
                 <TextBlock Grid.Row="0" Text="✅ Selected for deletion"
