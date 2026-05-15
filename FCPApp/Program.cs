@@ -22,21 +22,21 @@ public class Program
 
         try
         {
-            //if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            //{
-            //    if (!IsRunningAsAdmin())
-            //    {
-            //        Log("[ADMIN] Not admin, requesting elevation...");
-            //        RestartAsAdmin(args);
-            //        Log("[ADMIN] RestartAsAdmin called, exiting current process");
-            //        return;
-            //    }
-            //    Log("[ADMIN] Running as admin ✓");
-            //}
-            //else
-            //{
-            //    WarnAboutPermissions();
-            //}
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                if (!IsRunningAsAdmin())
+                {
+                    Log("[ADMIN] Not admin, requesting elevation...");
+                    RestartAsAdmin(args);
+                    Log("[ADMIN] RestartAsAdmin called, exiting current process");
+                    return;
+                }
+                Log("[ADMIN] Running as admin ✓");
+            }
+            else
+            {
+                WarnAboutPermissions();
+            }
 
             Log("[CONFIG] Checking startup status...");
             CheckStartupStatus();
