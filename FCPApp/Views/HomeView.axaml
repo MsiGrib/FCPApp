@@ -11,37 +11,53 @@
 
         <Border Grid.Row="0" Grid.Column="0" Margin="0,0,0,10"
                 BorderBrush="#444" BorderThickness="0,0,0,1" Padding="0,0,0,10">
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBlock Text="👤 Profile:" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="White"/>
+            <StackPanel Orientation="Horizontal" Spacing="15">
+                
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="👤 Profile:" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="White"/>
 
-                <ComboBox ItemsSource="{Binding AvailableProfiles}"
-                          SelectedItem="{Binding SelectedProfile, Mode=TwoWay}"
-                          Width="150"
-                          Background="#2d2d2d" Foreground="White" BorderBrush="#444">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate DataType="models:Profile">
-                            <TextBlock Text="{Binding Name}" Foreground="White"/>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
+                    <ComboBox ItemsSource="{Binding AvailableProfiles}"
+                              SelectedItem="{Binding SelectedProfile, Mode=TwoWay}"
+                              Width="180"
+                              Background="#2d2d2d" Foreground="White" BorderBrush="#444">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate DataType="models:Profile">
+                                <TextBlock Text="{Binding Name}" Foreground="White"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
 
-                <TextBox Text="{Binding NewProfileName, UpdateSourceTrigger=PropertyChanged}"
-                         Watermark="New profile name..." Width="120"
-                         Background="#2d2d2d" Foreground="White" BorderBrush="#444"/>
-                <Button Content="➕" Command="{Binding CreateProfileCommand}"
-                        Classes="action-btn" Background="#27ae60" Padding="8,5"
-                        ToolTip.Tip="Create new profile"/>
-                <Button Content="✏️" Command="{Binding RenameProfileCommand}"
-                        Classes="action-btn" Background="#9b59b6" Padding="8,5"
-                        IsEnabled="{Binding SelectedProfile}"
-                        ToolTip.Tip="Rename selected profile"/>
-                <Button Content="🗑️" Command="{Binding DeleteProfileCommand}"
-                        Classes="action-btn" Background="#c0392b" Padding="8,5"
-                        IsEnabled="{Binding SelectedProfile}"
-                        ToolTip.Tip="Delete selected profile"/>
-                <Button Content="💾" Command="{Binding SaveProfileCommand}"
-                        Classes="action-btn" Background="#27ae60" Padding="8,5"
-                        ToolTip.Tip="Save current state to profile"/>
+                    <Button Content="✏️" Command="{Binding RenameProfileCommand}"
+                            Classes="action-btn" Background="#9b59b6" Padding="8,5"
+                            IsEnabled="{Binding SelectedProfile}" 
+                            ToolTip.Tip="Rename the selected profile"/>
+                            
+                    <Button Content="🗑️" Command="{Binding DeleteProfileCommand}"
+                            Classes="action-btn" Background="#c0392b" Padding="8,5"
+                            IsEnabled="{Binding SelectedProfile}" 
+                            ToolTip.Tip="Delete the selected profile"/>
+                </StackPanel>
+
+                <Border Width="1" Background="#444" Height="24" VerticalAlignment="Center" Margin="5,0"/>
+
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBox x:Name="NewProfileTextBox"
+                             Text="{Binding NewProfileName, UpdateSourceTrigger=PropertyChanged}"
+                             Watermark="New profile name..." Width="160"
+                             Background="#2d2d2d" Foreground="White" BorderBrush="#444"
+                             KeyDown="NewProfileTextBox_KeyDown"/>
+                             
+                    <Button Content="➕ Create" Command="{Binding CreateProfileCommand}"
+                            Classes="action-btn" Background="#27ae60" Padding="10,5"
+                            IsEnabled="{Binding NewProfileName, Converter={StaticResource NotEmptyConverter}}"
+                            ToolTip.Tip="Create a new profile (or press Enter)"/>
+                </StackPanel>
+
+                <Border Width="1" Background="#444" Height="24" VerticalAlignment="Center" Margin="5,0"/>
+
+                <Button Content="💾 Save" Command="{Binding SaveProfileCommand}"
+                        Classes="action-btn" Background="#2980b9" Padding="10,5"
+                        ToolTip.Tip="Save the current state to the selected profile"/>
             </StackPanel>
         </Border>
 

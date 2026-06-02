@@ -1,9 +1,16 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="FCPApp.App"
+             xmlns:converters="using:FCPApp.Converters"
              RequestedThemeVariant="Dark">
 
     <Application.Styles>
         <FluentTheme />
     </Application.Styles>
+
+    <Application.Resources>
+        <converters:NotEmptyConverter x:Key="NotEmptyConverter"/>
+        <converters:StringEqualsConverter x:Key="StringEqualsConverter"/>
+        <converters:SimpleBoolConverter x:Key="SimpleBoolConverter"/>
+    </Application.Resources>
 </Application>

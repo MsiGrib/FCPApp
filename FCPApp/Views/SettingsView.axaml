@@ -43,7 +43,6 @@
                         <TextBlock Text="🔜 Coming soon" FontWeight="SemiBold" Foreground="#f1c40f"/>
                         <TextBlock Text="• Custom themes" Foreground="Gray" FontSize="11"/>
                         <TextBlock Text="• Language selection" Foreground="Gray" FontSize="11"/>
-                        <TextBlock Text="• Profiles" Foreground="Gray" FontSize="11"/>
                         <TextBlock Text="• Work with files" Foreground="Gray" FontSize="11"/>
                     </StackPanel>
                 </Border>

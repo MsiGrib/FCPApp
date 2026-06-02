@@ -64,7 +64,7 @@ public class Program
 
     private static void Log(string message)
     {
-        var line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
+        var line = $"[{DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss.fff")}] {message}";
         Console.WriteLine(line);
         try { File.AppendAllText(LogPath, line + "\n"); } catch { }
     }
